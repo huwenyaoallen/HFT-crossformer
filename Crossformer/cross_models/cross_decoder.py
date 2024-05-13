@@ -60,17 +60,18 @@ class MaxPoolingLayer(nn.Module):
                                 nn.GELU(),
                                 nn.Linear(d_model, d_model))
         #映射到段的长度
-        self.linear_pred = nn.Linear(d_model, seg_len)
+        self.linear_pred = nn.Linear(d_model, seg_len)    #不需要映射回一个patch，预测目标是一个scale，因此nn.Linear(d_model, 1)
 
     def forward(self, x):
         # 对 seg_num 维度进行最大池化操作
         pooled_output, _ = torch.max(x, dim=2, keepdim=True)
         # 对 ts_d 维度进行平均池化操作
-        pooled_output = torch.mean(pooled_output, dim=1,keepdim=True)
+        pooled_output = torch.mean(pooled_output, dim=1,keepdim=True)   #这里也用max pooling，后续考虑使用线性加权即用rearrange和nn.Linear(out_dim, 1)得到[batch_size, d_model]
+        #输入MLP的形状应该是[batch_size, d_model]
         pooled_output = self.MLP1(pooled_output)
         layer_predict = self.linear_pred(pooled_output)
 
-
+        #最终输出形状是[batch_size, 1]
         layer_predict = rearrange(pooled_output, 'b out_d seg_num seg_len -> b (out_d seg_num) seg_len')
         #print(layer_predict.shape)
 

@@ -48,7 +48,8 @@ class Dataset_MTS(Dataset):
         
         cols_data = df_raw.columns[1:]
         df_data = df_raw[cols_data]
-
+        
+        #Scale的部分要删掉，因为不同数据集的scale差异很大，且被scale后的log return没有意义
         if self.scale:
             if self.scale_statistic is None:
                 self.scaler = StandardScaler()
@@ -72,6 +73,7 @@ class Dataset_MTS(Dataset):
         r_end = r_begin + self.out_len
 
         seq_x = self.data_x[s_begin:s_end]
+        #y不应该是未来一段时间的logreturn，数据集里每一行的log return本身代表一个小时后的收益，y应该是self.data_y[r_end-1],即x中最后一行对应的logreturn
         seq_y = self.data_y[r_begin:r_end]
 
         return seq_x, seq_y
