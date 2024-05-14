@@ -59,8 +59,6 @@ class Dataset_MTS(Dataset):
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.in_len
-        r_begin = s_end
-        r_end = r_begin + self.out_len
 
         seq_x = self.data_x[s_begin:s_end]
         seq_x = self._normalize(seq_x)
@@ -76,12 +74,17 @@ class Dataset_MTS(Dataset):
         return self.scaler.inverse_transform(data)
 
     def _normalize(self, x):
-        x=torch.from_numpy(x)
-        dim2reduce = tuple(range(0, x.ndim-1))
-        self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
-        self.stdev = torch.sqrt(torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps).detach()
-        x = x - self.mean
-        x = x / self.stdev
-        x=x.numpy()
+        #x: [timestamp, features], normlize along the timestamp
+        x_mean = np.mean(x, axis=0, keepdims=True)
+        x_std = np.std(x, axis=0, keepdims=True) + self.eps
+        x_normed = (x - x_mean) / x_std
 
-        return x
+        # x=torch.from_numpy(x)
+        # dim2reduce = tuple(range(0, x.ndim-1))
+        # self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
+        # self.stdev = torch.sqrt(torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps).detach()
+        # x = x - self.mean
+        # x = x / self.stdev
+        # x=x.numpy()
+
+        return x_normed
