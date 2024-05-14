@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 
 class Dataset_MTS(Dataset):
     def __init__(self, root_path, data_path='ETTh1.csv', flag='train', size=None, 
-                  data_split = [0.7, 0.1, 0.2], scale=True, scale_statistic=None):
+                  data_split = [0.7, 0.1, 0.2], scale=False, scale_statistic=None):
         # size [seq_len, label_len, pred_len]
         # info
         self.in_len = size[0]
@@ -21,14 +21,13 @@ class Dataset_MTS(Dataset):
         assert flag in ['train', 'test', 'val']
         type_map = {'train':0, 'val':1, 'test':2}
         self.set_type = type_map[flag]
+        self.eps=1e-5
         
-        self.scale = scale
         #self.inverse = inverse
         
         self.root_path = root_path
         self.data_path = data_path
         self.data_split = data_split
-        self.scale_statistic = scale_statistic
         self.__read_data__()
 
     def __read_data__(self):
@@ -49,16 +48,8 @@ class Dataset_MTS(Dataset):
         cols_data = df_raw.columns[1:]
         df_data = df_raw[cols_data]
 
-        if self.scale:
-            if self.scale_statistic is None:
-                self.scaler = StandardScaler()
-                train_data = df_data[border1s[0]:border2s[0]]
-                self.scaler.fit(train_data.values)
-            else:
-                self.scaler = StandardScaler(mean = self.scale_statistic['mean'], std = self.scale_statistic['std'])
-            data = self.scaler.transform(df_data.values)
-        else:
-            data = df_data.values
+        
+        data = df_data.values
 
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
@@ -72,7 +63,9 @@ class Dataset_MTS(Dataset):
         r_end = r_begin + self.out_len
 
         seq_x = self.data_x[s_begin:s_end]
-        seq_y = self.data_y[r_begin:r_end]
+        seq_x = self._normalize(seq_x)
+        seq_y = self.data_y[s_end-1:s_end]
+        #这里要找的标签实际上就是x最后一行对应的logreturn
 
         return seq_x, seq_y
     
@@ -81,3 +74,14 @@ class Dataset_MTS(Dataset):
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
+
+    def _normalize(self, x):
+        x=torch.from_numpy(x)
+        dim2reduce = tuple(range(0, x.ndim-1))
+        self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
+        self.stdev = torch.sqrt(torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps).detach()
+        x = x - self.mean
+        x = x / self.stdev
+        x=x.numpy()
+
+        return x

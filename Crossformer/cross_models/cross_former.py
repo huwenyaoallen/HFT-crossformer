@@ -65,4 +65,4 @@ class Crossformer(nn.Module):
 
         predict_y = self.decoder(dec_in, enc_out)
 
-        return base + predict_y[:, :self.out_len, :]
+        return base + predict_y

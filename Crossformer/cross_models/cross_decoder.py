@@ -54,24 +54,26 @@ class DecoderLayer(nn.Module):
         print(layer_predict.shape)
         return dec_output, layer_predict
 class MaxPoolingLayer(nn.Module):
-    def __init__(self,seg_len, d_model):
+    def __init__(self, d_model):
         super(MaxPoolingLayer, self).__init__()
         self.MLP1 = nn.Sequential(nn.Linear(d_model, d_model),
                                 nn.GELU(),
                                 nn.Linear(d_model, d_model))
         #映射到段的长度
-        self.linear_pred = nn.Linear(d_model, seg_len)
+        self.linear_pred = nn.Linear(d_model, 1)
 
     def forward(self, x):
         # 对 seg_num 维度进行最大池化操作
         pooled_output, _ = torch.max(x, dim=2, keepdim=True)
         # 对 ts_d 维度进行平均池化操作
-        pooled_output = torch.mean(pooled_output, dim=1,keepdim=True)
+        pooled_output,_ = torch.max(pooled_output, dim=1,keepdim=True)
         pooled_output = self.MLP1(pooled_output)
+
         layer_predict = self.linear_pred(pooled_output)
+        #print(layer_predict.shape)
 
 
-        layer_predict = rearrange(pooled_output, 'b out_d seg_num seg_len -> b (out_d seg_num) seg_len')
+        layer_predict = rearrange(layer_predict, 'b 1 1 1 -> b 1')
         #print(layer_predict.shape)
 
         return layer_predict
@@ -87,7 +89,7 @@ class Decoder(nn.Module):
         self.router = router
         self.decode_layers = nn.ModuleList()
         for i in range(d_layers):
-            self.decode_layers.append(MaxPoolingLayer(seg_len, d_model))
+            self.decode_layers.append(MaxPoolingLayer(d_model))
     #接受输出为x
     def forward(self, x, cross):
         #提取时间步长维度
@@ -104,6 +106,5 @@ class Decoder(nn.Module):
             else:
                 final_predict = final_predict + layer_predict
             i += 1
-        
-        final_predict = rearrange(final_predict, 'b (out_d seg_num) seg_len -> b (seg_num seg_len) out_d', out_d = 1)
+
         return final_predict

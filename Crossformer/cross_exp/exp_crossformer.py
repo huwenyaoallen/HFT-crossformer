@@ -100,11 +100,11 @@ class Exp_crossformer(Exp_Basic):
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
             os.makedirs(path)
-        with open(os.path.join(path, "args.json"), 'w') as f:
+        #with open(os.path.join(path, "args.json"), 'w') as f:
             json.dump(vars(self.args), f, indent=True)
-        scale_statistic = {'mean': train_data.scaler.mean, 'std': train_data.scaler.std}
-        with open(os.path.join(path, "scale_statistic.pkl"), 'wb') as f:
-            pickle.dump(scale_statistic, f)
+        #scale_statistic = {'mean': train_data.scaler.mean, 'std': train_data.scaler.std}
+        #with open(os.path.join(path, "scale_statistic.pkl"), 'wb') as f:
+            #pickle.dump(scale_statistic, f)
         
         train_steps = len(train_loader)
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
@@ -223,7 +223,7 @@ class Exp_crossformer(Exp_Basic):
             flag='test',
             size=[args.in_len, args.out_len],  
             data_split = args.data_split,
-            scale = True,
+            scale = False,
             scale_statistic = args.scale_statistic,
         )
 
