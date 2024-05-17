@@ -50,6 +50,7 @@ class Crossformer(nn.Module):
         else:
             base = 0
         batch_size = x_seq.shape[0]
+
         
         if (self.in_len_add != 0):
             x_seq = torch.cat((x_seq[:, :1, :].expand(-1, self.in_len_add, -1), x_seq), dim = 1)
