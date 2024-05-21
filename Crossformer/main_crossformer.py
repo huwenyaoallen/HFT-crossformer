@@ -7,9 +7,9 @@ from utils.tools import string_split
 
 parser = argparse.ArgumentParser(description='CrossFormer')
 
-parser.add_argument('--data', type=str, required=True, default='ETTh1', help='data')
+parser.add_argument('--data', type=str, required=True, default='hf2', help='data')
 parser.add_argument('--root_path', type=str, default='./datasets/', help='root path of the data file')
-parser.add_argument('--data_path', type=str, default='hf.csv', help='data file')  
+parser.add_argument('--data_path', type=str, default='hf2.csv', help='data file')  
 parser.add_argument('--data_split', type=str, default='0.7,0.1,0.2',help='train/val/test split, can be ratio or number')
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location to store model checkpoints')
 
@@ -62,6 +62,8 @@ data_parser = {
     'ILI':{'data':'national_illness.csv', 'data_dim':7, 'split':[0.7, 0.1, 0.2]},
     'Traffic':{'data':'traffic.csv', 'data_dim':862, 'split':[0.7, 0.1, 0.2]},
     'hf':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
+    'id24':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
+    
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]

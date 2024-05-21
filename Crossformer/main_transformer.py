@@ -2,10 +2,10 @@ import argparse
 import os
 import torch
 
-from cross_exp.exp_transformer import Exp_Transformer
+from cross_exp.exp_crossformer import Exp_crossformer
 from utils.tools import string_split
 
-parser = argparse.ArgumentParser(description='Transformer')
+parser = argparse.ArgumentParser(description='CrossFormer')
 
 parser.add_argument('--data', type=str, required=True, default='ETTh1', help='data')
 parser.add_argument('--root_path', type=str, default='./datasets/', help='root path of the data file')
@@ -74,7 +74,7 @@ else:
 print('Args in experiment:')
 print(args)
 
-Exp = Exp_Transformer
+Exp = Exp_crossformer
 
 for ii in range(args.itr):
     # setting record of experiments
