@@ -185,14 +185,14 @@ class Exp_crossformer(Exp_Basic):
 
         metrics_all = np.stack(metrics_all, axis = 0)
         metrics_mean = metrics_all.sum(axis = 0) / instance_num
-        pcc=PCC(preds,trues)
+        pcc,ic=PCC(preds,trues)
         # result save
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         mae, mse, rmse, mape, mspe,rmspe= metrics_mean
-        print('mse:{}, mae:{},pcc:{}'.format(mse, mae, pcc))
+        print('mse:{}, mae:{},pcc:{},ic:{}'.format(mse, mae, pcc,ic))
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe,rmspe]))
         if (save_pred):

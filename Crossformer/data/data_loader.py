@@ -29,7 +29,7 @@ class Dataset_MTS(Dataset):
         self.data_path = data_path
         self.data_split = data_split
         self.data_Xs=[]
-        self.data_Ys=[]
+        self.data_Ys=[]                     
         self.nums=[]
         self.datapath=['hf.csv','hf2.csv']
         self.__read_data__()
