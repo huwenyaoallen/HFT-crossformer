@@ -31,11 +31,15 @@ class Dataset_MTS(Dataset):
         self.data_Xs=[]
         self.data_Ys=[]                     
         self.nums=[]
-        self.datapath=['hf.csv','hf2.csv']
+        self.datapath=['S100.csv','S200.csv','S400.csv']
+        self.i=0
         self.__read_data__()
 
     def __read_data__(self):
-        for i in [0,1]:
+        train_num=0
+        test_num=0
+        val_num=0
+        for i in [0,1,2]:
             df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.datapath[i]))
             train_num = int(len(df_raw)*self.data_split[0]); 
@@ -55,34 +59,46 @@ class Dataset_MTS(Dataset):
             self.data_Ys.append(self.data_y)
             l=border2-border1
             self.nums.append(l)
-            self.i=0
+ 
+
 
 
     
-    def __getitem__(self, index):
-        self.i=0
-        t=0
-        while t+self.nums[self.i+1]<=index:
-            t+=self.nums[self.i]
-            self.i+=1
-            if self.i+1>len(self.nums)-1:
+    def __getitem__(self, index):  
+        # 根据self.nums确定index对应的子集i和数据在该子集内的偏移量  
+        t = 0  
+        i = 0  
+        while t + self.nums[i] <index+self.in_len*(i+1):  
+            t += self.nums[i]  
+            i += 1  
+            if i==len(self.nums)-1:
                 break
-        s_begin =index-t
-        s_end = s_begin + self.in_len
+        #print(-1)
+        #print(index)
+        #print(t)
+        #print(i)
+        local_index=index
+        if (i>0):
+            local_index=index-(t-self.in_len*i)-1
+        #print(local_index)
+        s_begin = local_index  
+        s_end = s_begin + self.in_len  
+        
+        seq_x = self.data_Xs[i][s_begin:s_end]  
+        #print(seq_x.shape)
+        seq_x = self._normalize(seq_x)  # 数据标准化  
+        seq_y = self.data_Ys[i][s_begin + self.in_len - 1:s_begin + self.in_len]  
+        seq_y = seq_y.squeeze(-1)  
+        #print(10000)
 
-
-        seq_x = self.data_Xs[self.i][s_begin:s_end]
-        seq_x = self._normalize(seq_x)
-        seq_y = self.data_Ys[self.i][s_end-1:s_end]
-        seq_y =seq_y.squeeze(-1)
-        #这里要找的标签实际上就是x最后一行对应的logreturn
-        return seq_x, seq_y
-    
-    def __len__(self):
-        return len(self.data_Xs[self.i]) - self.in_len + 1
-
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
+      
+        return seq_x, seq_y  
+  
+    def __len__(self):  
+        total_length = 0  
+        for num in self.nums:  
+            total_length += num - self.in_len + 1  
+        return total_length+1-len(self.nums)
 
     def _normalize(self, x):
         #x: [timestamp, features], normlize along the timestamp

@@ -19,7 +19,7 @@ parser.add_argument('--seg_len', type=int, default=6, help='segment length (L_se
 parser.add_argument('--win_size', type=int, default=2, help='window size for segment merge')
 parser.add_argument('--factor', type=int, default=10, help='num of routers in Cross-Dimension Stage of TSA (c)')
 
-parser.add_argument('--data_dim', type=int, default=15, help='Number of dimensions of the MTS data (D)')
+parser.add_argument('--data_dim', type=int, default=14,help='Number of dimensions of the MTS data (D)')
 parser.add_argument('--d_model', type=int, default=256, help='dimension of hidden states (d_model)')
 parser.add_argument('--d_ff', type=int, default=512, help='dimension of MLP in transformer')
 parser.add_argument('--n_heads', type=int, default=4, help='num of heads')
@@ -68,7 +68,7 @@ data_parser = {
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.data_path = data_info['data']
-    args.data_dim = data_info['data_dim']
+    args.data_dim = 14
     args.data_split = data_info['split']
 else:
     args.data_split = string_split(args.data_split)

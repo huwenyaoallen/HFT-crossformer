@@ -52,7 +52,7 @@ class Exp_crossformer(Exp_Basic):
         if flag == 'test':
             shuffle_flag = False; drop_last = False; batch_size = args.batch_size;
         else:
-            shuffle_flag = True; drop_last = False; batch_size = args.batch_size;
+            shuffle_flag = False; drop_last = False; batch_size = args.batch_size;
         data_set = Dataset_MTS(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -60,7 +60,6 @@ class Exp_crossformer(Exp_Basic):
             size=[args.in_len, args.out_len],  
             data_split = args.data_split,
         )
-
         print(flag, len(data_set))
         data_loader = DataLoader(
             data_set,
@@ -209,8 +208,6 @@ class Exp_crossformer(Exp_Basic):
 
         outputs = self.model(batch_x)
 
-        #print(batch_y.shape)
-        #print(outputs.shape)
 
         if inverse:
             outputs = dataset_object.inverse_transform(outputs)

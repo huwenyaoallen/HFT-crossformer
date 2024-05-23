@@ -11,11 +11,11 @@ from cross_models.cross_embed import DSW_embedding
 from math import ceil
 
 class Crossformer(nn.Module):
-    def __init__(self, data_dim, in_len, out_len, seg_len, win_size = 4,
+    def __init__(self, data_dim , in_len, out_len, seg_len, win_size = 4,
                 factor=10, d_model=512, d_ff = 1024, n_heads=8, e_layers=3, 
                 dropout=0.0, baseline = False, device=torch.device('cuda:0')):
         super(Crossformer, self).__init__()
-        self.data_dim = data_dim
+        self.data_dim = 14
         self.in_len = in_len
         self.out_len = out_len
         self.seg_len = seg_len
