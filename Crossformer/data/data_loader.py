@@ -31,7 +31,7 @@ class Dataset_MTS(Dataset):
         self.data_Xs=[]
         self.data_Ys=[]                     
         self.nums=[]
-        self.datapath=['S100.csv','S200.csv','S400.csv']
+        self.datapath=['S100.csv','S200.csv','S400.csv','S600.csv']
         self.i=0
         self.__read_data__()
 
@@ -39,7 +39,7 @@ class Dataset_MTS(Dataset):
         train_num=0
         test_num=0
         val_num=0
-        for i in [0,1,2]:
+        for i in [0,1,2,3]:
             df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.datapath[i]))
             train_num = int(len(df_raw)*self.data_split[0]); 

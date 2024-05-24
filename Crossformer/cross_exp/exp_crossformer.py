@@ -263,9 +263,9 @@ class Exp_crossformer(Exp_Basic):
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-        pcc=PCC(preds,trues)
+        #pcc=PCC(preds,trues)
         mae, mse, rmse, mape, mspe = metrics_mean
-        print('mse:{}, mae:{},pcc:{}'.format(mse, mae, pcc))
+        #print('mse:{}, mae:{},pcc:{}'.format(mse, mae, pcc))
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
         if (save_pred):
