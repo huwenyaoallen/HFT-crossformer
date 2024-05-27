@@ -7,9 +7,9 @@ from utils.tools import string_split
 
 parser = argparse.ArgumentParser(description='mlp')
 
-parser.add_argument('--data', type=str, required=True, default='ETTh1', help='data')
+parser.add_argument('--data', type=str, required=True, default='hf2', help='data')
 parser.add_argument('--root_path', type=str, default='./datasets/', help='root path of the data file')
-parser.add_argument('--data_path', type=str, default='hf.csv', help='data file')  
+parser.add_argument('--data_path', type=str, default='hf2.csv', help='data file')  
 parser.add_argument('--data_split', type=str, default='0.7,0.1,0.2',help='train/val/test split, can be ratio or number')
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location to store model checkpoints')
 
@@ -19,7 +19,7 @@ parser.add_argument('--seg_len', type=int, default=6, help='segment length (L_se
 parser.add_argument('--win_size', type=int, default=2, help='window size for segment merge')
 parser.add_argument('--factor', type=int, default=10, help='num of routers in Cross-Dimension Stage of TSA (c)')
 
-parser.add_argument('--data_dim', type=int, default=15, help='Number of dimensions of the MTS data (D)')
+parser.add_argument('--data_dim', type=int, default=14,help='Number of dimensions of the MTS data (D)')
 parser.add_argument('--d_model', type=int, default=256, help='dimension of hidden states (d_model)')
 parser.add_argument('--d_ff', type=int, default=512, help='dimension of MLP in transformer')
 parser.add_argument('--n_heads', type=int, default=4, help='num of heads')
@@ -62,11 +62,13 @@ data_parser = {
     'ILI':{'data':'national_illness.csv', 'data_dim':7, 'split':[0.7, 0.1, 0.2]},
     'Traffic':{'data':'traffic.csv', 'data_dim':862, 'split':[0.7, 0.1, 0.2]},
     'hf':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
+    'id24':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
+    
 }
 if args.data in data_parser.keys():
     data_info = data_parser[args.data]
     args.data_path = data_info['data']
-    args.data_dim = data_info['data_dim']
+    args.data_dim = 13
     args.data_split = data_info['split']
 else:
     args.data_split = string_split(args.data_split)

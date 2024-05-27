@@ -8,7 +8,7 @@ from math import ceil
 class MLP(nn.Module):
     def __init__(self, data_dim, in_len):
         super(MLP, self).__init__()
-        self.data_dim = data_dim
+        self.data_dim = 14
         self.in_len = in_len
         input_size=in_len*data_dim
         self.mlp = nn.Sequential(

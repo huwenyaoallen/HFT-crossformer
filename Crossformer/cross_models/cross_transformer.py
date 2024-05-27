@@ -74,13 +74,16 @@ class Transformer(nn.Module):
         decoder_layer = torch.nn.TransformerDecoderLayer(d_model=d_model, nhead=8, dropout=dropout,
                                                          dim_feedforward=4 * d_model)
  
-        self.encoder = torch.nn.TransformerEncoder(encoder_layer, num_layers=2)
+        self.encoder = torch.nn.TransformerEncoder(encoder_layer, num_layers=4)
         self.decoder = torch.nn.TransformerDecoder(decoder_layer, num_layers=4)
  
         self.input_projection = torch.nn.Linear(data_dim, d_model)
         self.output_projection = torch.nn.Linear(data_dim, d_model)
         self.linear = torch.nn.Linear(d_model, 1)
         self.linear1=torch.nn.Linear(in_len, 1)
+        self.MLP1 = nn.Sequential(nn.Linear(d_model, d_model),
+                                nn.GELU(),
+                                nn.Linear(d_model, d_model))
 
  
     
@@ -89,30 +92,21 @@ class Transformer(nn.Module):
         src_start = self.input_projection(src).permute(1, 0, 2)
         in_sequence_len, batch_size = src_start.size(0), src_start.size(1)
         pos_encoder = (torch.arange(0, in_sequence_len, device=src.device).unsqueeze(0).repeat(batch_size, 1))
+        #print(2)
+        #print(pos_encoder.shape)
         pos_encoder = self.input_pos_embedding(pos_encoder).permute(1, 0, 2)
+        #print(pos_encoder.shape)
         src = src_start + pos_encoder
         src = self.encoder(src) + src_start
         return src
-    def decode_out(self, tgt, memory):
-        tgt_start = self.output_projection(tgt).permute(1, 0, 2)
-        out_sequence_len, batch_size = tgt_start.size(0), tgt_start.size(1)
-        pos_decoder = (torch.arange(0, out_sequence_len, device=tgt.device).unsqueeze(0).repeat(batch_size, 1))
-        pos_decoder = self.target_pos_embedding(pos_decoder).permute(1, 0, 2)
-        tgt = tgt_start + pos_decoder
-        tgt_mask = transformer_generate_tgt_mask(out_sequence_len, tgt.device)
-        out = self.decoder(tgt=tgt, memory=memory, tgt_mask=tgt_mask) + tgt_start
-        out = out.permute(1, 0, 2)  # [batch seq_len  d_model]
-        out = self.linear(out)
 
-        return out
  
     def forward(self, src):
         src = self.encode_in(src)
-        t=src.shape[1]
-        target_in=torch.rand((t, self.in_len, self.data_dim))
-        out = self.decode_out(tgt=target_in, memory=src)
-        out=out.squeeze(2)
-        predict_y=self.linear1(out)
+        src = self.MLP1(src)
+        pooled_output,_ = torch.max(src, dim=2)
+        pooled_output,_ = torch.max(pooled_output, dim=0)
+        predict_y=pooled_output
         return predict_y
 
                                            

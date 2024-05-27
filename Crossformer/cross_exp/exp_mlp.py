@@ -3,7 +3,7 @@ from cross_exp.exp_basic import Exp_Basic
 from cross_models.cross_mlp import Cross_MLP
 
 from utils.tools import EarlyStopping, adjust_learning_rate
-from utils.metrics import metric
+from utils.metrics import metric,PCC
 
 import numpy as np
 
@@ -100,7 +100,7 @@ class Exp_mlp(Exp_Basic):
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
             os.makedirs(path)
-        #with open(os.path.join(path, "args.json"), 'w') as f:
+        with open(os.path.join(path, "args.json"), 'w') as f:
             json.dump(vars(self.args), f, indent=True)
         #scale_statistic = {'mean': train_data.scaler.mean, 'std': train_data.scaler.std}
         #with open(os.path.join(path, "scale_statistic.pkl"), 'wb') as f:
@@ -178,22 +178,23 @@ class Exp_mlp(Exp_Basic):
                 instance_num += batch_size
                 batch_metric = np.array(metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())) * batch_size
                 metrics_all.append(batch_metric)
-                if (save_pred):
-                    preds.append(pred.detach().cpu().numpy())
-                    trues.append(true.detach().cpu().numpy())
+
+                preds.append(pred.detach().cpu().numpy())
+                trues.append(true.detach().cpu().numpy())
+                
 
         metrics_all = np.stack(metrics_all, axis = 0)
         metrics_mean = metrics_all.sum(axis = 0) / instance_num
-
+        pcc,ic=PCC(preds,trues)
         # result save
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        mae, mse, rmse, mape, mspe = metrics_mean
-        print('mse:{}, mae:{}'.format(mse, mae))
+        mae, mse, rmse, mape, mspe,rmspe= metrics_mean
+        print('mse:{}, mae:{},pcc:{},ic:{}'.format(mse, mae, pcc,ic))
 
-        np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+        np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe,rmspe]))
         if (save_pred):
             preds = np.concatenate(preds, axis = 0)
             trues = np.concatenate(trues, axis = 0)
@@ -249,9 +250,8 @@ class Exp_mlp(Exp_Basic):
                 instance_num += batch_size
                 batch_metric = np.array(metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())) * batch_size
                 metrics_all.append(batch_metric)
-                if (save_pred):
-                    preds.append(pred.detach().cpu().numpy())
-                    trues.append(true.detach().cpu().numpy())
+                preds.append(pred.detach().cpu().numpy())
+                trues.append(true.detach().cpu().numpy())
 
         metrics_all = np.stack(metrics_all, axis = 0)
         metrics_mean = metrics_all.sum(axis = 0) / instance_num
@@ -263,6 +263,7 @@ class Exp_mlp(Exp_Basic):
 
         mae, mse, rmse, mape, mspe = metrics_mean
         print('mse:{}, mae:{}'.format(mse, mae))
+        #pcc,ic=PCC(preds,trues)
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
         if (save_pred):

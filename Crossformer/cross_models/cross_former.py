@@ -15,7 +15,7 @@ class Crossformer(nn.Module):
                 factor=10, d_model=512, d_ff = 1024, n_heads=8, e_layers=3, 
                 dropout=0.0, baseline = False, device=torch.device('cuda:0')):
         super(Crossformer, self).__init__()
-        self.data_dim = 14
+        self.data_dim = 13
         self.in_len = in_len
         self.out_len = out_len
         self.seg_len = seg_len
@@ -45,6 +45,7 @@ class Crossformer(nn.Module):
                                     out_seg_num = (self.pad_out_len // seg_len), factor = factor)
         
     def forward(self, x_seq):
+        #print(x_seq.shape)
         if (self.baseline):
             base = x_seq.mean(dim = 1, keepdim = True)
         else:
@@ -54,7 +55,7 @@ class Crossformer(nn.Module):
         
         if (self.in_len_add != 0):
             x_seq = torch.cat((x_seq[:, :1, :].expand(-1, self.in_len_add, -1), x_seq), dim = 1)
-
+        #print(x_seq.shape)
         x_seq = self.enc_value_embedding(x_seq)
         x_seq += self.enc_pos_embedding
         x_seq = self.pre_norm(x_seq)

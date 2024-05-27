@@ -50,9 +50,11 @@ class Dataset_MTS(Dataset):
             border1 = border1s[self.set_type]
             border2 = border2s[self.set_type]
             cols_data = df_raw.columns[1:]
+            df_datax = df_raw[cols_data[:-1]]
             df_data = df_raw[cols_data]
             data = df_data.values
-            self.data_x = data[border1:border2]
+            datax = df_datax.values
+            self.data_x = datax[border1:border2]
             self.data_y = data[border1:border2]
             self.data_y = self.data_y[:, -1:]
             self.data_Xs.append(self.data_x)
@@ -89,7 +91,7 @@ class Dataset_MTS(Dataset):
         seq_x = self._normalize(seq_x)  # 数据标准化  
         seq_y = self.data_Ys[i][s_begin + self.in_len - 1:s_begin + self.in_len]  
         seq_y = seq_y.squeeze(-1)  
-        #print(10000)
+
 
       
         return seq_x, seq_y  
