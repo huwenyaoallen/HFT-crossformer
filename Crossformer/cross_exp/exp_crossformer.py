@@ -191,7 +191,8 @@ class Exp_crossformer(Exp_Basic):
 
         print(preds.shape, trues.shape)
         
-        pcc = PCC(preds,trues)
+        pcc = PCC(preds/self.args.scale_factor, trues/self.args.scale_factor)
+
         # result save
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):

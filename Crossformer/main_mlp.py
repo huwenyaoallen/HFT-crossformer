@@ -7,19 +7,21 @@ from utils.tools import string_split
 
 parser = argparse.ArgumentParser(description='mlp')
 
-parser.add_argument('--data', type=str, required=True, default='hf2', help='data')
-parser.add_argument('--root_path', type=str, default='./datasets/', help='root path of the data file')
-parser.add_argument('--data_path', type=str, default='hf2.csv', help='data file')  
+parser.add_argument('--data', type=str, default='Stock30min', help='data')
+parser.add_argument('--root_path', type=str, default='./30min_datasets/', help='root path of the data file')
+parser.add_argument('--data_path', type=str, default='none', help='data file')  
 parser.add_argument('--data_split', type=str, default='0.7,0.1,0.2',help='train/val/test split, can be ratio or number')
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location to store model checkpoints')
 
 parser.add_argument('--in_len', type=int, default=96, help='input MTS length (T)')
-parser.add_argument('--out_len', type=int, default=24, help='output MTS length (\tau)')
-parser.add_argument('--seg_len', type=int, default=6, help='segment length (L_seg)')
+parser.add_argument('--out_len', type=int, default=-1, help='output MTS length (\tau)')
+parser.add_argument('--seg_len', type=int, default=4, help='segment length (L_seg)')
 parser.add_argument('--win_size', type=int, default=2, help='window size for segment merge')
 parser.add_argument('--factor', type=int, default=10, help='num of routers in Cross-Dimension Stage of TSA (c)')
 
-parser.add_argument('--data_dim', type=int, default=14,help='Number of dimensions of the MTS data (D)')
+parser.add_argument('--data_dim', type=int, default=13,help='Number of dimensions of the MTS data (D)')
+parser.add_argument('--scale_factor', type=int, default=50, help='scale factor to enlarge logreturn')
+
 parser.add_argument('--d_model', type=int, default=256, help='dimension of hidden states (d_model)')
 parser.add_argument('--d_ff', type=int, default=512, help='dimension of MLP in transformer')
 parser.add_argument('--n_heads', type=int, default=4, help='num of heads')
@@ -54,24 +56,26 @@ if args.use_gpu and args.use_multi_gpu:
     args.gpu = args.device_ids[0]
     print(args.gpu)
 
-data_parser = {
-    'ETTh1':{'data':'ETTh1.csv', 'data_dim':7, 'split':[12*30*24, 4*30*24, 4*30*24]},
-    'ETTm1':{'data':'ETTm1.csv', 'data_dim':7, 'split':[4*12*30*24, 4*4*30*24, 4*4*30*24]},
-    'WTH':{'data':'WTH.csv', 'data_dim':12, 'split':[28*30*24, 10*30*24, 10*30*24]},
-    'ECL':{'data':'ECL.csv', 'data_dim':321, 'split':[15*30*24, 3*30*24, 4*30*24]},
-    'ILI':{'data':'national_illness.csv', 'data_dim':7, 'split':[0.7, 0.1, 0.2]},
-    'Traffic':{'data':'traffic.csv', 'data_dim':862, 'split':[0.7, 0.1, 0.2]},
-    'hf':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
-    'id24':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
+# data_parser = {
+#     'ETTh1':{'data':'ETTh1.csv', 'data_dim':7, 'split':[12*30*24, 4*30*24, 4*30*24]},
+#     'ETTm1':{'data':'ETTm1.csv', 'data_dim':7, 'split':[4*12*30*24, 4*4*30*24, 4*4*30*24]},
+#     'WTH':{'data':'WTH.csv', 'data_dim':12, 'split':[28*30*24, 10*30*24, 10*30*24]},
+#     'ECL':{'data':'ECL.csv', 'data_dim':321, 'split':[15*30*24, 3*30*24, 4*30*24]},
+#     'ILI':{'data':'national_illness.csv', 'data_dim':7, 'split':[0.7, 0.1, 0.2]},
+#     'Traffic':{'data':'traffic.csv', 'data_dim':862, 'split':[0.7, 0.1, 0.2]},
+#     'hf':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
+#     'id24':{'data':'hf.csv', 'data_dim':15, 'split':[0.7, 0.1, 0.2]},
     
-}
-if args.data in data_parser.keys():
-    data_info = data_parser[args.data]
-    args.data_path = data_info['data']
-    args.data_dim = 13
-    args.data_split = data_info['split']
-else:
-    args.data_split = string_split(args.data_split)
+# }
+# if args.data in data_parser.keys():
+#     data_info = data_parser[args.data]
+#     args.data_path = data_info['data']
+#     args.data_dim = 13
+#     args.data_split = data_info['split']
+# else:
+#     args.data_split = string_split(args.data_split)
+
+args.data_split = string_split(args.data_split)
 
 print('Args in experiment:')
 print(args)
@@ -80,7 +84,7 @@ Exp = Exp_mlp
 
 for ii in range(args.itr):
     # setting record of experiments
-    setting = 'Crossformer_{}_il{}_ol{}_sl{}_win{}_fa{}_dm{}_nh{}_el{}_itr{}'.format(args.data, 
+    setting = 'MLP_{}_il{}_ol{}_sl{}_win{}_fa{}_dm{}_nh{}_el{}_itr{}'.format(args.data, 
                 args.in_len, args.out_len, args.seg_len, args.win_size, args.factor,
                 args.d_model, args.n_heads, args.e_layers, ii)
 
