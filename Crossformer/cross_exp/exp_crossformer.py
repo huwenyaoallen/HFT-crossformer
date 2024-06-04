@@ -1,4 +1,4 @@
-from data.data_loader import Dataset_MTS
+from data.data_loader import Dataset_MTS, Dataset_multiStock, merge_timearray
 from cross_exp.exp_basic import Exp_Basic
 from cross_models.cross_former import Crossformer
 
@@ -17,6 +17,7 @@ import os
 import time
 import json
 import pickle
+import pandas as pd
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -52,14 +53,24 @@ class Exp_crossformer(Exp_Basic):
         if flag == 'test':
             shuffle_flag = False; drop_last = False; batch_size = args.batch_size;
         else:
-            shuffle_flag = False; drop_last = False; batch_size = args.batch_size;
-        data_set = Dataset_MTS(
+            shuffle_flag = True; drop_last = False; batch_size = args.batch_size;
+        # data_set = Dataset_MTS(
+        #     root_path=args.root_path,
+        #     data_path=args.data_path,
+        #     flag=flag,
+        #     size=[args.in_len, args.out_len],  
+        #     data_split = args.data_split,
+        #     scale_factor=args.scale_factor,
+        # )
+
+        data_set = Dataset_multiStock(
             root_path=args.root_path,
             data_path=args.data_path,
+            timestamp=args.timestamp_file,
             flag=flag,
-            size=[args.in_len, args.out_len],  
+            in_len=args.in_len,
             data_split = args.data_split,
-            scale_factor=args.scale_factor,
+            scale_factor=args.scale_factor,           
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -76,14 +87,14 @@ class Exp_crossformer(Exp_Basic):
         return model_optim
     
     def _select_criterion(self):
-        criterion =  nn.L1Loss()
+        criterion = nn.HuberLoss()
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
         self.model.eval()
         total_loss = []
         with torch.no_grad():
-            for i, (batch_x,batch_y) in enumerate(vali_loader):
+            for i, (batch_x,batch_y, _, _) in enumerate(vali_loader):
                 pred, true = self._process_one_batch(
                     vali_data, batch_x, batch_y)
                 loss = criterion(pred.detach().cpu(), true.detach().cpu())
@@ -119,7 +130,7 @@ class Exp_crossformer(Exp_Basic):
             
             self.model.train()
             epoch_time = time.time()
-            for i, (batch_x,batch_y) in enumerate(train_loader):
+            for i, (batch_x,batch_y, _, _) in enumerate(train_loader):
                 iter_count += 1
                 
                 model_optim.zero_grad()
@@ -169,19 +180,65 @@ class Exp_crossformer(Exp_Basic):
         trues = []
         metrics_all = []
         instance_num = 0
-        
+
+        #create two csv files to store the predictions and the true values, each row represents a timestamp, each column represents a stock
+        pred_df = pd.DataFrame(columns = ['time'])
+        true_df = pd.DataFrame(columns = ['time'])
+
         with torch.no_grad():
-            for i, (batch_x,batch_y) in enumerate(test_loader):
+            for i, (batch_x, batch_y, timestamp_array, stock_id) in enumerate(test_loader):
+                stock_id = stock_id.numpy().astype(int)
                 pred, true = self._process_one_batch(
                     test_data, batch_x, batch_y, inverse)
+                pred = pred / self.args.scale_factor
+                true = true / self.args.scale_factor
+
                 batch_size = pred.shape[0]
                 instance_num += batch_size
                 batch_metric = np.array(metric(pred.detach().cpu().numpy(), true.detach().cpu().numpy())) * batch_size
                 metrics_all.append(batch_metric)
-
-                preds.append(pred.detach().cpu().numpy())
-                trues.append(true.detach().cpu().numpy())
                 
+                pred_values = pred.detach().cpu().numpy()
+                true_values = true.detach().cpu().numpy()
+
+                #write the predictions and the true values to the csv files
+                for j in range(batch_size):
+                    timestamp = merge_timearray(timestamp_array[j])
+                    if timestamp not in pred_df['time'].values:
+                        new_row = pd.DataFrame({'time': [timestamp]})
+                        pred_df = pd.concat([pred_df, new_row], ignore_index=True)
+                        true_df = pd.concat([true_df, new_row], ignore_index=True)
+                    if stock_id[j] not in pred_df.columns:
+                        #add a new column with full of NaN values
+                        pred_df[stock_id[j]] = np.nan
+                        true_df[stock_id[j]] = np.nan
+                    #locate the timestamp and the stock id and fill in the prediction and the true value
+                    pred_df[stock_id[j]].loc[pred_df['time'] == timestamp] = pred_values[j]
+                    true_df[stock_id[j]].loc[true_df['time'] == timestamp] = true_values[j]
+
+                preds.append(pred_values)
+                trues.append(true_values)
+        # result save
+        folder_path = './results/' + setting +'/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        
+        #sort the columns of the csv files, besides the first column 'time'
+        time_col = pred_df['time']
+        pred_df = pred_df.drop(columns = ['time'])
+        pred_df = pred_df.sort_index(axis=1)
+        pred_df.insert(0, 'time', time_col)
+        true_df = true_df.drop(columns = ['time'])
+        true_df = true_df.sort_index(axis=1)
+        true_df.insert(0, 'time', time_col)
+
+        #sort the rows of the csv files
+        pred_df = pred_df.sort_values(by='time')
+        true_df = true_df.sort_values(by='time')
+
+        #save the csv files
+        pred_df.to_csv(folder_path+'pred.csv', index=False)
+        true_df.to_csv(folder_path+'true.csv', index=False)
 
         metrics_all = np.stack(metrics_all, axis = 0)
         metrics_mean = metrics_all.sum(axis = 0) / instance_num
@@ -190,8 +247,6 @@ class Exp_crossformer(Exp_Basic):
         trues = np.concatenate(trues, axis = 0).squeeze()
 
         print(preds.shape, trues.shape)
-        
-        pcc = PCC(preds/self.args.scale_factor, trues/self.args.scale_factor)
 
         # result save
         folder_path = './results/' + setting +'/'
@@ -199,7 +254,7 @@ class Exp_crossformer(Exp_Basic):
             os.makedirs(folder_path)
 
         mae, mse, rmse, mape, mspe,rmspe= metrics_mean
-        print('mse:{}, mae:{},pcc:{}'.format(mse, mae, pcc))
+        print('mse:{}, mae:{}'.format(mse, mae))
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe,rmspe]))
         if (save_pred):

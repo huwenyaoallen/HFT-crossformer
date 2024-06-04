@@ -1,2 +1,6 @@
 Crossformer/checkpoints/
 Crossformer/results/
+Crossformer/full_dataset/
+Crossformer/30min_datasets/
+Crossformer/30min_datasets_full/
+Crossformer/tmp_datasets/
