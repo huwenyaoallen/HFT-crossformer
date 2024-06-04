@@ -59,6 +59,7 @@ class Exp_crossformer(Exp_Basic):
             flag=flag,
             size=[args.in_len, args.out_len],  
             data_split = args.data_split,
+            scale_factor=args.scale_factor,
         )
         print(flag, len(data_set))
         data_loader = DataLoader(
@@ -75,7 +76,7 @@ class Exp_crossformer(Exp_Basic):
         return model_optim
     
     def _select_criterion(self):
-        criterion =  nn.MSELoss()
+        criterion =  nn.L1Loss()
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
@@ -184,19 +185,23 @@ class Exp_crossformer(Exp_Basic):
 
         metrics_all = np.stack(metrics_all, axis = 0)
         metrics_mean = metrics_all.sum(axis = 0) / instance_num
-        pcc,ic=PCC(preds,trues)
+
+        preds = np.concatenate(preds, axis = 0).squeeze()
+        trues = np.concatenate(trues, axis = 0).squeeze()
+
+        print(preds.shape, trues.shape)
+        
+        pcc = PCC(preds,trues)
         # result save
         folder_path = './results/' + setting +'/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         mae, mse, rmse, mape, mspe,rmspe= metrics_mean
-        print('mse:{}, mae:{},pcc:{},ic:{}'.format(mse, mae, pcc,ic))
+        print('mse:{}, mae:{},pcc:{}'.format(mse, mae, pcc))
 
         np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe,rmspe]))
         if (save_pred):
-            preds = np.concatenate(preds, axis = 0)
-            trues = np.concatenate(trues, axis = 0)
             np.save(folder_path+'pred.npy', preds)
             np.save(folder_path+'true.npy', trues)
 
@@ -258,6 +263,8 @@ class Exp_crossformer(Exp_Basic):
         metrics_mean = metrics_all.sum(axis = 0) / instance_num
         true_values = np.concatenate(trues, axis=0)
         pred_values = np.concatenate(preds, axis=0)
+
+        pcc = PCC(pred_values, true_values)
         #rmspe = np.sqrt(np.mean(((true_values - pred_values) / true_values) ** 2))
         # result save
         folder_path = './results/' + setting +'/'
